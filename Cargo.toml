@@ -1,0 +1,14 @@
+[package]
+name = "winelist-generator"
+version = "0.0.1"
+edition = "2021"
+description = "Auto generates HTML winelist from cellartracker-data"
+
+[dependencies]
+quick-xml = "=0.24.1"
+reqwest = "0.12.8"
+rocket = "0.5.1"
+
+[[bin]]
+name = "winelistgen"
+path = "src/main.rs"
