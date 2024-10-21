@@ -5,7 +5,7 @@ edition = "2021"
 description = "Auto generates HTML winelist from cellartracker-data"
 
 [dependencies]
-quick-xml = "=0.24.1"
+csv = "1.3.0"
 reqwest = "0.12.8"
 rocket = "0.5.1"
 
