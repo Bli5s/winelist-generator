@@ -1,7 +1,7 @@
 #[macro_use] extern crate rocket;
-use csv;
+use csv::Reader;
 use std::env;
-use latex::{print, Document, Section};
+use latex::{print, DocumentClass, Document, Section};
 
 struct Wine {
     size: String,
@@ -19,7 +19,7 @@ fn get_inventory() -> Vec<Wine> {
     let mut inventory: Vec<Wine> = Vec::new();
     //let csv = reqwest::get("https://www.cellartracker.com/xlquery.asp?User={}&Password={}&table=Inventory&format=csv", handle, pw).text_with_charset("utf-8");
     
-    let mut reader = csv::Reader::from_path("testdata.csv").unwrap();
+    let mut reader = Reader::from_path("testdata.csv").unwrap();
     for r in reader.records() {
         match r {
             Ok(r) => {
@@ -42,7 +42,7 @@ fn get_inventory() -> Vec<Wine> {
 }
 
 fn create_latex(inv: Vec<Wine>) -> Result<String, Error> {
-    let mut doc = Document::new(latex::DocumentClass::Article);
+    let mut doc = Document::new(DocumentClass::Article);
     doc.preamble.title("Vinkart");
     doc.preamble.author("Winelistgen");
 
@@ -57,7 +57,7 @@ fn create_latex(inv: Vec<Wine>) -> Result<String, Error> {
             println!("Section: {:?}", e)
         }
     }
-    return latex::print(&doc);
+    return print(&doc);
 }
 
 #[get("/")]
