@@ -1,9 +1,10 @@
 #[macro_use] extern crate rocket;
 use failure;
 use csv::Reader;
-use rocket::tokio::time::error::Elapsed;
-use std::{collections::HashSet, env, fmt::format};
+use rocket::Error;
+use std::{collections::HashSet, env, fmt::format, path::PathBuf};
 use latex::{print, DocumentClass, Document, Section};
+use pandoc::{self, Pandoc, PandocOutput};
 
 #[derive(Eq, Hash, PartialEq)]
 struct Wine {
@@ -22,7 +23,8 @@ fn get_inventory() -> HashSet<Wine> {
     let mut inventory: HashSet<Wine> = HashSet::new();
     //let csv = reqwest::get("https://www.cellartracker.com/xlquery.asp?User={}&Password={}&table=Inventory&format=csv", handle, pw).text_with_charset("utf-8");
     
-    let mut reader = Reader::from_path("testdata.csv").unwrap();
+    let mut reader = Reader::from_path("testdata.csv").unwrap(); // TEST
+
     for r in reader.records() {
         match r {
             Ok(r) => {
@@ -77,7 +79,13 @@ fn create_latex(inv: &HashSet<Wine>) -> Result<String, failure::Error> {
 fn list() -> String {
     let inventory = get_inventory();
     let doc = create_latex(&inventory).unwrap();
-    return doc;
+    let mut pandoc = Pandoc::new();
+    pandoc.set_input_format(pandoc::InputFormat::Latex, Vec::new());
+    pandoc.set_output_format(pandoc::OutputFormat::Html5, Vec::new());
+    pandoc.set_input(pandoc::InputKind::Pipe(doc));
+    pandoc.set_output(pandoc::OutputKind::Pipe);
+    pandoc.execute().unwrap();
+    return String::from("Done!\n");
 }
 
 #[launch]
