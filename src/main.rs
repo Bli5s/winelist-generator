@@ -1,10 +1,9 @@
 #[macro_use] extern crate rocket;
 use failure;
 use csv::Reader;
-use rocket::Error;
-use std::{collections::HashSet, env, fmt::format, path::PathBuf};
+use std::{collections::HashSet, env};
 use latex::{print, DocumentClass, Document, Section};
-use pandoc::{self, Pandoc, PandocOutput};
+use pandoc::{self, Pandoc};
 
 #[derive(Eq, Hash, PartialEq)]
 struct Wine {
