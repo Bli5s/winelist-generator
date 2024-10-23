@@ -1,7 +1,9 @@
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
+use rocket::fs::FileServer;
 use failure;
 use csv::Reader;
-use std::{collections::HashSet, env};
+use std::{collections::HashSet, env, path::PathBuf};
 use latex::{print, DocumentClass, Document, Section};
 use pandoc::{self, Pandoc};
 
@@ -74,8 +76,21 @@ fn create_latex(inv: &HashSet<Wine>) -> Result<String, failure::Error> {
     return print(&doc);
 }
 
+fn pdf() -> String {
+    let file_path = "static/winelist.pdf".to_string();
+    let inventory = get_inventory();
+    let doc = create_latex(&inventory).unwrap();
+    let mut pandoc = Pandoc::new();
+    pandoc.set_input_format(pandoc::InputFormat::Latex, Vec::new());
+    pandoc.set_output_format(pandoc::OutputFormat::Pdf, Vec::new());
+    pandoc.set_input(pandoc::InputKind::Pipe(doc));
+    pandoc.set_output(pandoc::OutputKind::File(PathBuf::from(&file_path)));
+    pandoc.execute().unwrap();
+    return file_path;
+}
+
 #[get("/")]
-fn list() -> String {
+fn html() -> String {
     let inventory = get_inventory();
     let doc = create_latex(&inventory).unwrap();
     let mut pandoc = Pandoc::new();
@@ -84,10 +99,12 @@ fn list() -> String {
     pandoc.set_input(pandoc::InputKind::Pipe(doc));
     pandoc.set_output(pandoc::OutputKind::Pipe);
     pandoc.execute().unwrap();
-    return String::from("Done!\n");
+    return String::from("Html generation done!\n");
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![list])
+    rocket::build()
+        .mount("/", routes![html])
+        .mount("/pdf", FileServer::from(pdf()))
 }
