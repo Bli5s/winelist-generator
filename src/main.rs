@@ -5,7 +5,7 @@ use failure;
 use csv::Reader;
 use std::{collections::HashSet, env, path::PathBuf};
 use latex::{print, DocumentClass, Document, Section};
-use pandoc::{self, Pandoc};
+use pandoc::{self, Pandoc, PandocOutput};
 
 #[derive(Eq, Hash, PartialEq)]
 struct Wine {
@@ -30,13 +30,13 @@ fn get_inventory() -> HashSet<Wine> {
         match r {
             Ok(r) => {
                 inventory.insert(Wine{
-                    size: r.get(4).unwrap_or("").to_string(),
-                    variety: r.get(23).unwrap_or("").to_string(),
-                    country: r.get(17).unwrap_or("").to_string(),
-                    region: r.get(18).unwrap_or("").to_string(),
-                    vintage: r.get(14).unwrap_or("").to_string(),
-                    name: r.get(15).unwrap_or("").to_string(),
-                    grape: r.get(26).unwrap_or("").to_string()
+                    size: r.get(4).unwrap().to_string(),
+                    variety: r.get(23).unwrap().to_string(),
+                    country: r.get(17).unwrap().to_string(),
+                    region: r.get(18).unwrap().to_string(),
+                    vintage: r.get(14).unwrap().to_string(),
+                    name: r.get(15).unwrap().to_string(),
+                    grape: r.get(26).unwrap().to_string()
                 });
             }
             Err(e) => {
@@ -82,11 +82,15 @@ fn pdf() -> String {
     let doc = create_latex(&inventory).unwrap();
     let mut pandoc = Pandoc::new();
     pandoc.set_input_format(pandoc::InputFormat::Latex, Vec::new());
-    pandoc.set_output_format(pandoc::OutputFormat::Pdf, Vec::new());
+    pandoc.set_output_format(pandoc::OutputFormat::Latex, Vec::new());
     pandoc.set_input(pandoc::InputKind::Pipe(doc));
     pandoc.set_output(pandoc::OutputKind::File(PathBuf::from(&file_path)));
-    pandoc.execute().unwrap();
-    return file_path;
+    let res = pandoc.execute().unwrap();
+    match res{
+        PandocOutput::ToBuffer(_s) => {return "Unexpected output type!".to_string()},
+        PandocOutput::ToBufferRaw(_v) => {return "Unexpected output type!".to_string()},
+        PandocOutput::ToFile(f) => {return f.into_os_string().into_string().unwrap()}
+    }
 }
 
 #[get("/")]
@@ -95,11 +99,15 @@ fn html() -> String {
     let doc = create_latex(&inventory).unwrap();
     let mut pandoc = Pandoc::new();
     pandoc.set_input_format(pandoc::InputFormat::Latex, Vec::new());
-    pandoc.set_output_format(pandoc::OutputFormat::Html5, Vec::new());
+    pandoc.set_output_format(pandoc::OutputFormat::Markdown, Vec::new());
     pandoc.set_input(pandoc::InputKind::Pipe(doc));
     pandoc.set_output(pandoc::OutputKind::Pipe);
-    pandoc.execute().unwrap();
-    return String::from("Html generation done!\n");
+    let res = pandoc.execute().unwrap();
+    match res {
+        PandocOutput::ToBuffer(s) => {return s},
+        PandocOutput::ToBufferRaw(_v) => {return "Unexpected output type!".to_string()},
+        PandocOutput::ToFile(_f) => {return "Unexpected output type!".to_string()}
+    }
 }
 
 #[launch]
