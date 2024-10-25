@@ -109,5 +109,8 @@ async fn serve_pdf() -> Option<NamedFile> {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![serve_pdf])
+    let conf = rocket::Config::figment()
+        .merge(("address", "0.0.0.0"));
+
+    rocket::custom(conf).mount("/", routes![serve_pdf])
 }
