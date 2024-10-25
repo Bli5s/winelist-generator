@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate rocket;
-use rocket::fs::FileServer;
+use rocket::fs::{relative, NamedFile};
 use failure;
 use csv::Reader;
 use std::{collections::HashSet, env, path::PathBuf};
 use latex::{print, Document, DocumentClass, Paragraph, Section};
-use pandoc::{self, Pandoc, PandocOutput};
+use pandoc::{self, Pandoc};
 
 #[derive(Eq, Hash, PartialEq)]
 struct Wine {
@@ -19,7 +19,7 @@ struct Wine {
 }
 
 const DOC_TITLE: &str = "Wine list";
-const PDF_PATH: &str = "static/winelist.pdf";
+const PDF_PATH: &str = relative!("static/winelist.pdf");
 
 async fn get_inventory() -> HashSet<Wine> {
     let handle: String = env::var("CELLARTRACKER_USR").unwrap();
@@ -35,7 +35,6 @@ async fn get_inventory() -> HashSet<Wine> {
             println!("HTTP GET returned an error: {}", e)
         }
     }
-    //let mut reader = Reader::from_path("testdata.csv").unwrap(); // TEST
     
     let mut reader = Reader::from_reader(csv.as_bytes());
 
@@ -91,7 +90,7 @@ fn create_latex(inv: &HashSet<Wine>) -> Result<String, failure::Error> {
     return print(&doc);
 }
 
-async fn pdf() -> String{
+async fn generate_pdf() {
     let inventory = get_inventory().await;
     let doc = create_latex(&inventory).unwrap();
     let mut pandoc = Pandoc::new();
@@ -100,29 +99,15 @@ async fn pdf() -> String{
     pandoc.set_input(pandoc::InputKind::Pipe(doc));
     pandoc.set_output(pandoc::OutputKind::File(PathBuf::from(String::from(PDF_PATH))));
     pandoc.execute().unwrap();
-    return String::from("static/");
 }
 
 #[get("/")]
-async fn html() -> String {
-    let inventory = get_inventory().await;
-    let doc = create_latex(&inventory).unwrap();
-    let mut pandoc = Pandoc::new();
-    pandoc.set_input_format(pandoc::InputFormat::Latex, Vec::new());
-    pandoc.set_output_format(pandoc::OutputFormat::Markdown, Vec::new());
-    pandoc.set_input(pandoc::InputKind::Pipe(doc));
-    pandoc.set_output(pandoc::OutputKind::Pipe);
-    let res = pandoc.execute().unwrap();
-    match res {
-        PandocOutput::ToBuffer(s) => {return s},
-        PandocOutput::ToBufferRaw(_v) => {return "Unexpected output type!".to_string()},
-        PandocOutput::ToFile(_f) => {return "Unexpected output type!".to_string()}
-    }
+async fn serve_pdf() -> Option<NamedFile> {
+    generate_pdf().await;
+    NamedFile::open(PDF_PATH).await.ok()
 }
 
 #[launch]
-async fn rocket() -> _ {
-    rocket::build()
-        //.mount("/", routes![html])
-        .mount("/", FileServer::from(pdf().await))
+fn rocket() -> _ {
+    rocket::build().mount("/", routes![serve_pdf])
 }
