@@ -6,6 +6,7 @@ Auto generates PDF winelist from cellartracker data
    1. Ubuntu/Debian:
 ```
     sudo apt-get install pandoc texlive-full -y
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 1. Define environment variables
