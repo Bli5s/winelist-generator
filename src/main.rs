@@ -19,7 +19,7 @@ struct Wine {
 }
 
 const DOC_TITLE: &str = "Wine list";
-const PDF_PATH: &str = relative!("static/winelist.pdf");
+const PDF_PATH: &str = "static/winelist.pdf";
 
 async fn get_inventory() -> HashSet<Wine> {
     let handle: String = env::var("CELLARTRACKER_USR").unwrap();
