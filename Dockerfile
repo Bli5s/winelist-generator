@@ -9,4 +9,4 @@ RUN mkdir static
 RUN apt-get update && apt-get install -y texlive-full pandoc && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /opt/build/target/release/winelistgen .
 EXPOSE 8000
-CMD ["winelistgen"]
+CMD ["./winelistgen"]
