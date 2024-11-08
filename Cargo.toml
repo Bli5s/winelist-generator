@@ -2,7 +2,7 @@
 name = "winelist-generator"
 version = "0.1.0"
 edition = "2021"
-description = "Auto generates HTML winelist from cellartracker data"
+description = "Auto generates PDF winelist from cellartracker data"
 
 [dependencies]
 csv = "1.3.0"
